@@ -1,8 +1,10 @@
+import gevent.monkey
+gevent.monkey.patch_all()
+
 import os
 import logging
 import json
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor
 from flask import Flask, render_template, jsonify
 from flask_socketio import SocketIO
 from selenium import webdriver
@@ -11,10 +13,11 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import WebDriverException
 import urllib3
-import asyncio
+import gevent
+from gevent.pool import Pool
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='gevent')
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, filename='website_health.log', filemode='a',
@@ -26,7 +29,6 @@ from config import WEBSITES
 print("Loaded websites:", WEBSITES)  # Debugging print statement
 
 website_status = {}
-executor = ThreadPoolExecutor(max_workers=4)
 
 def load_cached_data():
     if os.path.exists('website_status_cache.json'):
@@ -38,7 +40,7 @@ def save_cached_data(data):
     with open('website_status_cache.json', 'w') as f:
         json.dump(data, f)
 
-def sync_take_screenshot(domain):
+def take_screenshot(domain):
     screenshot_path = os.path.join('static', 'screenshots', f'{domain}.png')
     if os.path.exists(screenshot_path):
         return screenshot_path
@@ -62,12 +64,7 @@ def sync_take_screenshot(domain):
     finally:
         driver.quit()
 
-async def take_screenshot(domain):
-    loop = asyncio.get_event_loop()
-    screenshot_path = await loop.run_in_executor(executor, sync_take_screenshot, domain)
-    return screenshot_path
-
-async def check_website(domain):
+def check_website(domain):
     result = {
         'domain': domain,
         'online': False,
@@ -87,7 +84,7 @@ async def check_website(domain):
             if os.path.exists(screenshot_path[1:]):  # Remove leading '/' for os.path.exists check
                 result['screenshot'] = screenshot_path
             else:
-                screenshot = await take_screenshot(domain)
+                screenshot = take_screenshot(domain)
                 if screenshot:
                     result['screenshot'] = screenshot
         else:
@@ -98,13 +95,22 @@ async def check_website(domain):
         result['error'] = f"General error: {e}"
     
     print(f"Result for {domain}: {result}")  # Debugging
-    socketio.emit('update', {'data': [result]})
     return result
 
-async def run_checks():
-    tasks = [check_website(website) for website in WEBSITES]
-    await asyncio.gather(*tasks)
-    save_cached_data(WEBSITES)
+def run_checks():
+    results = []
+    total_websites = len(WEBSITES)
+    pool = Pool(10)
+    for index, website in enumerate(WEBSITES):
+        result = pool.spawn(check_website, website)
+        results.append(result)
+        progress = ((index + 1) / total_websites) * 100
+        result_value = result.get()  # Ensure we get the result value
+        socketio.emit('update', {'data': result_value, 'progress': progress})
+        print(f"Check result: {result_value}")  # Debugging
+    pool.join()
+    save_cached_data([result.get() for result in results])
+    socketio.emit('check_complete')
 
 @app.route('/')
 def index():
@@ -118,7 +124,7 @@ def initial_data():
 @socketio.on('start_check')
 def start_check():
     print("Received start_check event")  # Debugging
-    asyncio.run(run_checks())
+    gevent.spawn(run_checks)
     print("Checks started")
 
 @socketio.on('add_website')
@@ -131,4 +137,4 @@ def add_website(data):
         print(f"Website {new_website} already exists")
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, port=5001)
+    socketio.run(app, port=5001)

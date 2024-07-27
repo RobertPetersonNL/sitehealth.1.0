@@ -2,6 +2,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const socket = io();
 
     function updateWebsiteList(website) {
+        if (!website || !website.domain) {
+            console.error('Invalid website data:', website);
+            return;
+        }
+
         console.log('Updating website list with data:', website);
         const websiteList = document.getElementById('websiteList');
         let existingCard = document.querySelector(`[data-domain="${website.domain}"]`);
@@ -35,16 +40,35 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
     }
 
+    function updateProgressBar(progress) {
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        progressBar.style.width = `${progress}%`;
+        progressText.textContent = `${Math.round(progress)}%`;
+    }
+
     socket.on('connect', () => {
         console.log('Connected to Socket.IO server');
         socket.emit('start_check');
     });
 
     socket.on('update', (data) => {
-        data.data.forEach(updateWebsiteList);
+        if (data.data) {
+            updateWebsiteList(data.data);
+        } else {
+            console.error('Invalid update data:', data);
+        }
+        updateProgressBar(data.progress || 0);
+    });
+
+    socket.on('check_complete', () => {
+        document.getElementById('progress-container').style.display = 'none';
+        document.getElementById('progress-text').style.display = 'none';
     });
 
     document.getElementById('startCheck').addEventListener('click', () => {
+        document.getElementById('progress-container').style.display = 'block';
+        document.getElementById('progress-text').style.display = 'block';
         socket.emit('start_check');
     });
 
