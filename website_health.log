@@ -11712,3 +11712,9 @@
 2024-07-27 10:05:13,423 - INFO - Redirecting http://basoosterbaan.nl -> https://basoosterbaan.nl/
 2024-07-27 10:05:23,532 - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='basoosterbaan.nl', port=443): Read timed out. (read timeout=10)")': /
 2024-07-27 10:05:33,637 - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='basoosterbaan.nl', port=443): Read timed out. (read timeout=10)")': /
+2024-07-27 10:05:43,814 - INFO - Redirecting http://bandstrafinancieeladvies.nl -> https://bandstrafinancieeladvies.nl/
+2024-07-27 10:05:44,268 - INFO - Redirecting http://autorijschooltheazwaan.nl -> https://theazwaan.nl/
+2024-07-27 10:05:47,005 - INFO - Redirecting http://automotorenrevisie.nl -> https://automotorenrevisie.nl/
+2024-07-27 10:05:48,134 - INFO - Redirecting http://automotorenonderdelen.nl -> https://automotorenrevisie.nl/
+2024-07-27 10:05:49,361 - INFO - Redirecting http://alfaserviceassen.nl -> https://alfaserviceassen.nl/
+2024-07-27 10:05:50,486 - INFO - Redirecting http://activiteitencentrumplak.nl -> https://activiteitencentrumplak.nl/
