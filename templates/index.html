@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Health Checker</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>Website Health Checker</h1>
+    </header>
+    <main>
+        <div class="controls">
+            <button id="startCheck">Search</button>
+            <button id="addWebsite">Add Website</button>
+            <button id="refresh">Refresh</button>
+        </div>
+        <div id="websiteList" class="website-list"></div>
+    </main>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="/static/script.js"></script>
+</body>
+</html>
