@@ -1,55 +1,67 @@
 body {
     font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    text-align: center;
 }
 
 header {
-    text-align: center;
-    margin-bottom: 20px;
+    background-color: #f8f8f8;
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+aside {
+    margin: 20px 0;
+}
+
+aside button {
+    margin: 0 5px;
+}
+
+main {
+    padding: 20px;
 }
 
 .controls {
-    text-align: center;
     margin-bottom: 20px;
 }
 
-.website-list {
+button {
+    padding: 10px 20px;
+    margin: 5px;
+}
+
+#websiteList {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-around;
+    justify-content: center;
 }
 
-.website-card {
-    border: 2px solid #ccc;
-    border-radius: 10px;
+.website {
+    border: 1px solid #ddd;
+    border-radius: 5px;
     margin: 10px;
     padding: 10px;
-    width: 30%;
-    box-sizing: border-box;
-    text-align: center;
+    width: 300px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    text-align: left;
 }
 
-.website-card img {
+.website img {
     max-width: 100%;
-    max-height: 200px;
-    object-fit: cover;
-    border-radius: 10px;
-    margin-bottom: 10px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
 }
 
-.website-card .status {
-    display: block;
-    margin-top: 10px;
-    font-weight: bold;
+#progressBarContainer {
+    width: 100%;
+    background-color: #f3f3f3;
+    margin-top: 20px;
 }
 
-.website-card .status.online {
-    color: green;
-}
-
-.website-card .status.offline {
-    color: red;
-}
-
-.website-card.broken {
-    border-color: red;
+#progressBar {
+    width: 0;
+    height: 20px;
+    background-color: #4caf50;
 }

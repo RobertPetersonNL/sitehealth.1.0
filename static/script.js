@@ -1,54 +1,87 @@
-document.addEventListener('DOMContentLoaded', (event) => {
-    const socket = io();
-
-    function updateWebsiteList(website) {
-        console.log('Updating website list with data:', website);
-        const websiteList = document.getElementById('websiteList');
-        let existingCard = document.querySelector(`[data-domain="${website.domain}"]`);
-
-        if (existingCard) {
-            existingCard.querySelector('.status').textContent = website.online ? 'Online' : 'Offline';
-            existingCard.querySelector('.status').className = `status ${website.online ? 'online' : 'offline'}`;
-            if (website.screenshot) {
-                let img = existingCard.querySelector('img');
-                if (!img) {
-                    img = document.createElement('img');
-                    existingCard.insertBefore(img, existingCard.firstChild);
-                }
-                img.src = website.screenshot;
-            }
-        } else {
-            const div = document.createElement('div');
-            div.className = 'website-card';
-            div.setAttribute('data-domain', website.domain);
-            div.innerHTML = `
-                <img src="${website.screenshot || ''}" alt="Screenshot">
-                <a href="http://${website.domain}" target="_blank">${website.domain}</a>
-                <span class="status ${website.online ? 'online' : 'offline'}">
-                    ${website.online ? 'Online' : 'Offline'}
-                </span>
-            `;
-            if (!website.online) {
-                div.classList.add('broken');
-            }
-            websiteList.appendChild(div);
-        }
-    }
+document.addEventListener("DOMContentLoaded", function() {
+    const socket = io('http://localhost:5001', {
+        transports: ['websocket']
+    });
 
     socket.on('connect', () => {
-        console.log('Connected to Socket.IO server');
-        socket.emit('start_check');
+        console.log('Socket.IO connected');
     });
 
-    socket.on('update', (data) => {
-        data.data.forEach(updateWebsiteList);
+    socket.on('disconnect', () => {
+        console.log('Socket.IO disconnected');
     });
 
-    document.getElementById('startCheck').addEventListener('click', () => {
-        socket.emit('start_check');
+    const filterAll = document.getElementById('filterAll');
+    const filterOnline = document.getElementById('filterOnline');
+    const filterOffline = document.getElementById('filterOffline');
+    const startCheck = document.getElementById('startCheck');
+    const addWebsite = document.getElementById('addWebsite');
+    const refresh = document.getElementById('refresh');
+    const websiteList = document.getElementById('websiteList');
+    const progressBar = document.getElementById('progressBar');
+
+    let websites = [];
+
+    filterAll.addEventListener('click', () => filterWebsites('all'));
+    filterOnline.addEventListener('click', () => filterWebsites('online'));
+    filterOffline.addEventListener('click', () => filterWebsites('offline'));
+    startCheck.addEventListener('click', () => socket.emit('start_check'));
+    addWebsite.addEventListener('click', () => {
+        const newWebsite = prompt("Enter the new website URL:");
+        if (newWebsite) {
+            socket.emit('add_website', { url: newWebsite });
+        }
+    });
+    refresh.addEventListener('click', () => socket.emit('refresh'));
+
+    socket.on('website_data', data => {
+        websites = data;
+        displayWebsites(websites);
     });
 
-    document.getElementById('refresh').addEventListener('click', () => {
-        window.location.reload();
+    socket.on('progress', percentage => {
+        progressBar.style.width = `${percentage}%`;
     });
+
+    socket.on('update', message => {
+        websites = websites.map(website => {
+            if (website.domain === message.data[0].domain) {
+                return message.data[0];
+            }
+            return website;
+        });
+        displayWebsites(websites);
+    });
+
+    function filterWebsites(status) {
+        let filteredWebsites = websites;
+        if (status === 'online') {
+            filteredWebsites = websites.filter(website => website.online);
+        } else if (status === 'offline') {
+            filteredWebsites = websites.filter(website => !website.online);
+        }
+        displayWebsites(filteredWebsites);
+    }
+
+    function displayWebsites(websites) {
+        websiteList.innerHTML = ''; // Clear the current list
+        websites.forEach(website => {
+            const websiteElement = document.createElement('div');
+            websiteElement.classList.add('website');
+            websiteElement.innerHTML = `
+                <h2>${website.domain}: ${website.online ? 'Online' : 'Offline'}</h2>
+                ${website.screenshot ? `<img src="${website.screenshot}" alt="${website.domain} screenshot">` : ''}
+                ${website.error ? `<p>Error: ${website.error}</p>` : ''}
+            `;
+            websiteList.appendChild(websiteElement);
+        });
+    }
+
+    // Request initial data
+    fetch('/initial_data')
+        .then(response => response.json())
+        .then(data => {
+            websites = data;
+            displayWebsites(websites);
+        });
 });
